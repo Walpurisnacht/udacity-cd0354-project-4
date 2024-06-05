@@ -1,9 +1,11 @@
 import middy from '@middy/core'
 import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
-// import { getUserId } from '../../auth/utils.mjs'
+import { createLogger } from '../../utils/logger.mjs'
 import { getUserId } from '../utils.mjs';
-import { createTodo } from '../../businessLogic/todos.mjs'
+import { createTodoByUserId } from '../../businessLogic/todos.mjs'
+
+const logger = createLogger('createTodo')
 
 export const handler = middy()
   .use(httpErrorHandler())
@@ -14,23 +16,21 @@ export const handler = middy()
     })
   )
   .handler(async (event) => {
-    console.log('Processing event: ', event)
+    logger.info(`Processing event: ${event}`, {function: "handler()"})
     const newTodo = JSON.parse(event.body)
-    console.log('newImage', newTodo.name)
-
 
     if (!newTodo.name) {
       return {
         statusCode: 400,
         body: JSON.stringify({
-          error: 'ERROR: The name is empty.'
+          error: `ERROR: Todo's name cannot be empty!`
         })
       };
     }
 
-    const newItem = await createTodo(newTodo, getUserId(event))
+    const newItem = await createTodoByUserId(newTodo, getUserId(event))
     return {
-      statusCode: 200,
+      statusCode: 201,
       headers: {
         'Access-Control-Allow-Origin': '*'
       },

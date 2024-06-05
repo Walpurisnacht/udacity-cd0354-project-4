@@ -3,6 +3,9 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 import AWSXRay from 'aws-xray-sdk-core'
 import * as uuid from 'uuid'
 import AWS from 'aws-sdk'
+import { createLogger } from '../utils/logger.mjs'
+
+const logger = createLogger('todosAccess')
 
 export class TodosAccess {
   constructor(
@@ -24,44 +27,55 @@ export class TodosAccess {
     this.s3 = s3
   }
 
-  async getToDos(userId) {
-    console.log('Getting all groups')
-    console.log(userId)
+  // Get list of Todos by userId
+  async getToDosByUserId(userId) {
+    logger.info(`Getting all Todos by userId: ${userId}`, {function: "getToDosByUserId"})
     const result = await this.dynamoDbClient.query({
       TableName: this.todoTable,
       IndexName: this.userIdIndex,
-      KeyConditionExpression: 'userId = :userId', // provide specific value  for partition key
+      KeyConditionExpression: 'userId = :userId',
       ExpressionAttributeValues: {
         ':userId': userId
-      }
+      },
+      ScanIndexForward: false
     })
-    console.log(result)
+    logger.info(`getToDosByUserId result: ${result}`, {function: "getToDosByUserId"})
     return result
   }
 
-  async createTodos(newTodo, userId) {
+  // Create a Todo by userId
+  async createTodoByUserId(newTodo, userId) {
     const todoId = uuid.v4()
     const timestamp = new Date().toISOString()
-    const newItem = {
+    const newTodoRecord = {
       userId: userId,
       todoId: todoId,
       createdAt: timestamp,
       done: false,
       ...newTodo
     }
+    logger.info(`Create new Todo: ${newTodoRecord}`, {function: "createTodoByUserId()"})
+    logger.info(`New Todo's todoId: ${todoId}`, {function: "createTodoByUserId()"})
     const result = await this.dynamoDbClient.put({
       TableName: this.todoTable,
-      Item: newItem
+      Item: newTodoRecord
     })
-    console.log('Create Todo: ', result)
+    logger.info(`createTodoByUserId result: ${result}`, {function: "createTodoByUserId()"})
     return newTodo
   }
-  async updateTodos(updatedTodo, todoId, userId) {
+
+  // Update a Todo by userId
+  async updateTodoByUserId(updatedTodo, todoId, userId) {
+    logger.info(`Update Todo: ${updatedTodo}`, {function: "updateTodoByUserId()"})
+    logger.info(`Update Todo's todoId: ${todoId}`, {function: "updateTodoByUserId()"})
     const result = await this.dynamoDbClient.update({
         TableName: this.todoTable,
-        Key: {userId, todoId}, 
-        UpdateExpression: 'set #N=:name, #d=:dueDate, #c=:done',
-        ExpressionAttributeNames: { '#N': 'name', '#d':'dueDate', '#c':'done'},
+        Key: {
+          'userId' : userId,
+          'todoId' : todoId
+        },
+        UpdateExpression: 'set #name=:name, #duedate=:dueDate, #done=:done',
+        ExpressionAttributeNames: { '#name': 'name', '#duedate':'dueDate', '#done':'done'},
         ExpressionAttributeValues:{
             ":name": updatedTodo.name,
             ":dueDate": updatedTodo.dueDate,
@@ -69,11 +83,13 @@ export class TodosAccess {
         },
         ReturnValues: "UPDATED_NEW"
     })
-    console.log('Update Todo: ', result)
-
+    logger.info(`updateTodoByUserId result: ${result}`, {function: "updateTodoByUserId()"})
     return updatedTodo
   }
-  async deleteTodo(todoId, userId){
+
+  // Delete a Todo by userId
+  async deleteTodoByUserId(todoId, userId){
+    logger.info(`Delete Todo's todoId: ${todoId}`, {function: "deleteTodoByUserId()"})
     const result = await this.dynamoDbClient.delete({
         TableName: this.todoTable,
         Key: {
@@ -82,23 +98,7 @@ export class TodosAccess {
         },
         ReturnValues: "ALL_OLD"
     })
-    console.log('Update Todo: ', result)
+    logger.info(`deleteTodoByUserId result: ${result}`, {function: "deleteTodoByUserId()"})
     return result
   }
-  async generateUploadUrl(todoId, userId) {
-    const uploadUrl = this.s3.getSignedUrl("putObject", {
-        Bucket: this.bucketName,
-        Key: todoId,
-        Expires: parseInt(this.urlExpiration)
-    });
-    await this.dynamoDbClient.update({
-        TableName: this.todoTable, 
-        Key: {userId, todoId},
-        UpdateExpression: "set attachmentUrl=:URL",
-        ExpressionAttributeValues:{
-            ":URL": uploadUrl.split("?")[0]
-        }
-    })
-    return uploadUrl
-  } 
 }

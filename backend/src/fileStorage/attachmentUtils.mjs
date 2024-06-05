@@ -2,6 +2,10 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 import AWSXRay from 'aws-xray-sdk-core'
 import AWS from 'aws-sdk'
+import { createLogger } from '../utils/logger.mjs'
+import { log } from 'winston'
+
+const logger = createLogger('attachmentUtils')
 
 export class AttachmentUtils {
   constructor(
@@ -20,20 +24,28 @@ export class AttachmentUtils {
     this.urlExpiration = urlExpiration
     this.s3 = s3
   }
-  async generateUploadUrl(todoId, userId) {
+
+  // Generate pre-signed URL for a Todo's attachment by userId
+  async generateUploadUrlByUserId(todoId, userId) {
     const uploadUrl = this.s3.getSignedUrl("putObject", {
         Bucket: this.bucketName,
         Key: todoId,
         Expires: parseInt(this.urlExpiration)
     });
+    logger.info(`Pre-signed URL: ${uploadUrl}`, {function: "generateUploadUrlByUserId()"})
+    // Update corresponding Todo's attachment's URL info
     await this.dynamoDbClient.update({
         TableName: this.todoTable, 
-        Key: {userId, todoId},
+        Key: {
+          'userId' : userId,
+          'todoId' : todoId
+        },
         UpdateExpression: "set attachmentUrl=:URL",
         ExpressionAttributeValues:{
             ":URL": uploadUrl.split("?")[0]
         }
     })
+    logger.info(`Updated attachment URL for userId: ${userId} with todoId: ${todoId}`, {function: "generateUploadUrlByUserId()"})
     return uploadUrl
   } 
 }

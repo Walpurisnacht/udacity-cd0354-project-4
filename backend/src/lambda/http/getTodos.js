@@ -1,12 +1,11 @@
 import middy from '@middy/core'
 import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
-// import { parseUserId, getUserId } from '../../auth/utils.mjs'
+import { createLogger } from '../../utils/logger.mjs'
 import { getUserId } from '../utils.mjs';
-import { getTodos } from '../../businessLogic/todos.mjs'
-import { CloudWatchClient, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch'
+import { getToDosByUserId } from '../../businessLogic/todosBiz.mjs'
 
-const cloudwatch = new CloudWatchClient()
+const logger = createLogger('getTodos')
 
 export const handler = middy()
   .use(httpErrorHandler())
@@ -17,39 +16,16 @@ export const handler = middy()
     })
   )
   .handler(async (event) => {
-    const startTime = timeInMs()
-    console.log('Processing event: ', event)
+    logger.info(`Processing event: ${event}`, {function: "handler()"})
 
-    // const authorization = event.headers.Authorization
-    // const userId = await getUserId(authorization)
     const userId = await getUserId(event)
-    console.log('userId', userId)
-    const todos = await getTodos(userId)
+    logger.info(`userId: ${userId}`, {function: "handler()"})
+
+    const todos = await getToDosByUserId(userId)
+
     const items = todos.Items
-    console.log('todos', todos)
-
-    // Metric Cloud Watch
-    let endTime = timeInMs()
-  
-    const totalTime = endTime - startTime  
-    const latencyMetricCommand = new PutMetricDataCommand({
-      MetricData: [
-        {
-          MetricName: 'Latency',
-          Dimensions: [
-            {
-              Name: 'FunctionName',
-              Value: 'GetTodos'
-            }
-          ],
-          Unit: 'Milliseconds',
-          Value: totalTime
-        }
-      ],
-      Namespace: 'serverless-todo-app'
-    })
-    await cloudwatch.send(latencyMetricCommand)
-
+    logger.info(`todos: ${todos}`, {function: "handler()"})
+    
     return {
       statusCode: 200,
       headers: {
@@ -60,7 +36,3 @@ export const handler = middy()
       })
     }
   })
-
-function timeInMs() {
-  return new Date().getTime()
-}

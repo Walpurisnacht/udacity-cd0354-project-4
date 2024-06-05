@@ -70,7 +70,7 @@ async function verifyToken(authHeader) {
   const token = getToken(authHeader)
   const jwt = jsonwebtoken.decode(token, { complete: true })
 
-  // TODO: Implement token verification
+  // Token verification
   jsonwebtoken.verify(token, certificate, {algorithms: ['RS256']})
   return jwt;
 }
