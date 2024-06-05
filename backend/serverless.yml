@@ -120,9 +120,6 @@ functions:
           path: todos/{todoId}
           cors: true
           authorizer: Auth
-          request:
-            schemas:
-              application/json: ${file(models/delete-todo-model.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -144,9 +141,6 @@ functions:
           path: todos/{todoId}/attachment
           cors: true
           authorizer: Auth
-          request:
-            schemas:
-              application/json: ${file(models/generate-upload-url-model.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:

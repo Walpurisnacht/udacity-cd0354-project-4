@@ -76,7 +76,10 @@ export class TodosAccess {
   async deleteTodo(todoId, userId){
     const result = await this.dynamoDbClient.delete({
         TableName: this.todoTable,
-        Key: {todoId, userId},
+        Key: {
+          'userId' : userId,
+          'todoId' : todoId
+        },
         ReturnValues: "ALL_OLD"
     })
     console.log('Update Todo: ', result)

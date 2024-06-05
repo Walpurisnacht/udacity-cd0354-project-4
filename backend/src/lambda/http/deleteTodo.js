@@ -10,24 +10,15 @@ export const handler = middy()
     cors({
       credentials: true,
       origin: '*', // Allow all origins
-      methods: 'GET,PUT,POST,DELETE,OPTIONS', // Allow these methods
-      allowedHeaders: 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token', // Allow these headers
-      preflightContinue: true, // Continue on successful preflight request
     })
   )
-  .handler(async (event) => {
+  .handler(async event => {
     console.log('Processing event: ', event)
     const todoId = event.pathParameters.todoId
     
     const deletedTodo = await deleteTodo(todoId, getUserId(event))
     return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({
-        deletedTodo
-      })
+      statusCode: 200
     }
   })
 
