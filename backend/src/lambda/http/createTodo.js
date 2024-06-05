@@ -3,7 +3,7 @@ import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
 import { createLogger } from '../../utils/logger.mjs'
 import { getUserId } from '../utils.mjs';
-import { createTodoByUserId } from '../../businessLogic/todos.mjs'
+import { createTodoByUserId } from '../../businessLogic/todosBiz.mjs'
 
 const logger = createLogger('createTodo')
 

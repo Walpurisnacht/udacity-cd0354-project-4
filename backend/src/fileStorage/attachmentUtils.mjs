@@ -3,7 +3,6 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 import AWSXRay from 'aws-xray-sdk-core'
 import AWS from 'aws-sdk'
 import { createLogger } from '../utils/logger.mjs'
-import { log } from 'winston'
 
 const logger = createLogger('attachmentUtils')
 

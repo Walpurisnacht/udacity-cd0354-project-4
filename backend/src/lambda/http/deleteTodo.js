@@ -3,7 +3,7 @@ import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
 import { createLogger } from '../../utils/logger.mjs'
 import { getUserId } from '../utils.mjs';
-import { deleteTodoByUserId } from '../../businessLogic/todos.mjs'
+import { deleteTodoByUserId } from '../../businessLogic/todosBiz.mjs'
 
 const logger = createLogger('deleteTodo')
 
